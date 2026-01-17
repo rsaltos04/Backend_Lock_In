@@ -30,4 +30,4 @@ class CorazonesSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model= User
-        fields= ['id','first_name','password','email']
+        fields= ['id','username','password','email']

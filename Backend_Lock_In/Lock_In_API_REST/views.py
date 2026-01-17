@@ -14,7 +14,7 @@ from django.shortcuts import get_object_or_404
 # Create your views here.
 @api_view(['POST'])
 def login(request):
-    user=get_object_or_404(User, email=request.data['email'])
+    user=get_object_or_404(User, username=request.data['username'])
     if not user.check_password(request.data['password']):
         return Response({"Error": "Contraseña incorrecta"},status=status.HTTP_404_NOT_FOUND)
     token,created=Token.objects.get_or_create(user=user)
@@ -26,7 +26,7 @@ def register(request):
     user=UserSerializer(data=request.data)
     if user.is_valid():
         user.save()
-        userRetrieved=User.objects.get(email=request.data["email"])
+        userRetrieved=User.objects.get(username=request.data["username"])
         userRetrieved.set_password(request.data["password"])
         userRetrieved.save()
         token=Token.objects.create(user=userRetrieved)
