@@ -1,13 +1,50 @@
 from django.shortcuts import render
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, authentication_classes,permission_classes
+from rest_framework.authentication import SessionAuthentication,TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authtoken.models import Token
 from rest_framework import status
-from .models import Objetivo, Post, Corazones, SesionEnfoque
+from .models import Objetivo, Post, Corazones, SesionEnfoque,User
 from django.db.models import Q
-from .serializer import ObjetivoSerializer, PostSerializer, SesionEnfoqueSerializer, CorazonesSerializer
-from django.db.models import Count
+from .serializer import ObjetivoSerializer, PostSerializer, SesionEnfoqueSerializer, CorazonesSerializer, UserSerializer
+from django.db.models import Count, Sum
+from django.shortcuts import get_object_or_404
 
 # Create your views here.
+@api_view(['POST'])
+def login(request):
+    user=get_object_or_404(User, email=request.data['email'])
+    if not user.check_password(request.data['password']):
+        return Response({"Error": "Contraseña incorrecta"},status=status.HTTP_404_NOT_FOUND)
+    token,created=Token.objects.get_or_create(user=user)
+    serializer=UserSerializer(instance=user)
+    return Response({"token":token.key,"user":serializer.data})
+
+@api_view(['POST'])
+def register(request):
+    user=UserSerializer(data=request.data)
+    if user.is_valid():
+        user.save()
+        userRetrieved=User.objects.get(email=request.data["email"])
+        userRetrieved.set_password(request.data["password"])
+        userRetrieved.save()
+        token=Token.objects.create(user=userRetrieved)
+
+
+        return Response({"token": token.key , "user": user.data}, status=status.HTTP_201_CREATED)
+
+    return Response({"error":"Error al intentar crear una cuenta"},status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@authentication_classes([SessionAuthentication,TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def test_token(request):
+
+    return Response("Pasado con {}".format(request.user.email))
+
+
+
 
 # Vistas de objetivos
 @api_view(['GET'])
@@ -30,10 +67,17 @@ def get_estadisticas(request, pk):
             filter=Q(id_post__id_autor__id=pk, corazon=True)))
     personas_que_has_inspirado = Corazones.objects.aggregate(total=Count('id_post_id',
             filter=Q(id_autor=pk, corazon=True), distinct=True))
+    minutos_totales= SesionEnfoque.objects.aggregate(total=Sum('minutos_totales',filter=Q(id_autor=pk, completado=True)))
+    minutos_logeado_totales= SesionEnfoque.objects.aggregate(total=Sum('minutos_segundo_plano',filter=Q(id_autor=pk, completado=True)))
+    horas_totales=minutos_totales["total"]/60
+    horas_logeado_totales=minutos_logeado_totales["total"]/60
+
     formato={"Total de Objetivos":total,
              "Total de Completados": total_completado,
              "Apoyo recibido": apoyo_recibido["total"],
-             "Personas que has inspirado": personas_que_has_inspirado["total"]}
+             "Personas que has inspirado": personas_que_has_inspirado["total"],
+             "Horas Totales" : horas_totales,
+             "Horas Logeado Totales": horas_logeado_totales}
     return Response(formato,status.HTTP_200_OK)
 
 @api_view(['GET'])

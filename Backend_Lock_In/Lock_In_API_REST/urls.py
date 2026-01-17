@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from . import views
 
 urlpatterns=[
@@ -23,4 +23,8 @@ urlpatterns=[
     path('corazon/create', views.create_corazon),
     path('corazon/delete/<int:pk>', views.delete_corazon),
     path('corazon/put/<int:pk>', views.put_corazon),
+    path('autenticacion/register/', views.register),
+    path('autenticacion/login/', views.login),
+    path('autenticacion/test_token/', views.test_token),
+    
 ]

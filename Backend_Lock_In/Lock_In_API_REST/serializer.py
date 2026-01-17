@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Objetivo, Post, Corazones, SesionEnfoque
+from .models import Objetivo, Post, Corazones, SesionEnfoque , User
 
 class ObjetivoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -26,3 +26,8 @@ class CorazonesSerializer(serializers.ModelSerializer):
     class Meta:
         model= Corazones
         fields='__all__'
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model= User
+        fields= ['id','first_name','password','email']
