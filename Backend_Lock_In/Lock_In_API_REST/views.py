@@ -67,10 +67,30 @@ def get_estadisticas(request, pk):
             filter=Q(id_post__id_autor__id=pk, corazon=True)))
     personas_que_has_inspirado = Corazones.objects.aggregate(total=Count('id_post_id',
             filter=Q(id_autor=pk, corazon=True), distinct=True))
-    minutos_totales= SesionEnfoque.objects.aggregate(total=Sum('minutos_totales',filter=Q(id_autor=pk, completado=True)))
-    minutos_logeado_totales= SesionEnfoque.objects.aggregate(total=Sum('minutos_segundo_plano',filter=Q(id_autor=pk, completado=True)))
-    horas_totales=minutos_totales["total"]/60
-    horas_logeado_totales=minutos_logeado_totales["total"]/60
+    minutos_totales = SesionEnfoque.objects.filter(
+    id_objetivo__id_autor=pk,
+    id_objetivo__completado=True  # Django compara este campo con tu número
+).aggregate(total=Sum('minutos_totales'))
+    print(minutos_totales)
+    print(pk)
+    print(minutos_totales['total'])
+    if minutos_totales['total'] is None:
+        horas_totales=0    
+    else: 
+        
+        horas_totales=minutos_totales["total"]/60
+
+    print(horas_totales)
+    minutos_logeado_totales = SesionEnfoque.objects.filter(
+    id_objetivo__id_autor=pk,
+    id_objetivo__completado=True  
+).aggregate(total=Sum('minutos_segundo_plano'))
+    if minutos_logeado_totales['total'] is None:
+        horas_logeado_totales=0    
+    else: 
+        
+        horas_logeado_totales=minutos_logeado_totales["total"]/60
+    
 
     formato={"Total de Objetivos":total,
              "Total de Completados": total_completado,
